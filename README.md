@@ -112,4 +112,4 @@ Artifact Repository: Nexus Repository Manager
 
 Notifications: Slack
 
-This pipeline ensures that every code change undergoes rigorous automated checks, leading to a high-quality and reliable Vprofile application artifact ready for further deployment.
+This pipeline ensures that every code change undergoes rigorous automated checks, leading to a high-quality and reliable Vprofile application artifact ready for further deployment
