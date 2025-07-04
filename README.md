@@ -17,6 +17,13 @@ The CI pipeline for the Vprofile App is designed to:
 
 The process is triggered by code pushes and ends with a validated artifact stored in Nexus, followed by a Slack notification.
 
+
+---
+
+## 📊 Visual Flow Diagram
+
+![CI Pipeline Diagram](ci-vprofile-diagram.png) 
+
 ---
 
 ## 🛠️ Pipeline Configuration and Stages
@@ -95,14 +102,6 @@ The process is triggered by code pushes and ends with a validated artifact store
 - **Channel**: `#all-devops`  
 - **Message**: Build status, job name, build number, Jenkins URL.  
 - **Color map**: `good` for success, `danger` for failure.  
-
----
-
-## 📊 Visual Flow Diagram
-
-![CI Pipeline Diagram](ci-vprofile-diagram.png) <!-- ← Add/adjust the image path here -->
-
-(For a vector/PDF version, see `ci-vprofile.drawio.pdf`.)
 
 ---
 
