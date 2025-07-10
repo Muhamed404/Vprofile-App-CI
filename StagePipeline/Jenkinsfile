@@ -22,6 +22,10 @@ pipeline {
         NEXUS_LOGIN = "nexuslogin"
         SONARSCANNER = "sonarscanner"
         SONARSERVER = "sonarserver"
+        registryCredentinal = 'ecr:us-east-1:awscreds'
+        appRegisrty = '441160708640.dkr.ecr.us-east-1.amazonaws.com/vprofileappimage'
+        vprofileRegistry = 'https://441160708640.dkr.ecr.us-east-1.amazonaws.com'
+
     }
     stages {
         stage('Build') {
@@ -78,7 +82,7 @@ pipeline {
                     groupId: 'QA',
                     version: "${env.BUILD_ID}-${env.BUILD_TIMESTAMP}",
                     repository: "${RELEASE_REPO}",
-                    credentialsId: "nexuslogin-ID",
+                    credentialsId: "${NEXUS_LOGIN}",
                     artifacts: [
                       [artifactId: 'vproapp',
                       classifier: '',
@@ -86,6 +90,23 @@ pipeline {
                       type: 'war']
                    ]
                 )
+            }
+        }
+        stage('Build App Image') {
+            steps {
+                script {
+                    dockerImage = docker.build( appRegisrty + ":$BUILD_NUMBER", "./Docker-files/app/")
+                }
+            }
+        }
+        stage("Upload App Image") {
+            steps{
+                script {
+                    docker.withRegistry(vprofileRegistry, registryCredentinal) {
+                        dockerImage.push("$BUILD_NUMBER")
+                        dockerImage.push("latest")
+                    }
+                }
             }
         }
     }
