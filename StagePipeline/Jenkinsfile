@@ -96,7 +96,7 @@ pipeline {
             steps {
                 sh "pwd && ls "
                 script {
-                    dockerImage = docker.build( appRegisrty + ":$BUILD_NUMBER", "./Docker-files/app/")
+                    dockerImage = docker.build( appRegisrty + ":$BUILD_NUMBER", "./Docker-files/app/" .)
                 }
             }
         }
