@@ -22,6 +22,8 @@ pipeline {
         NEXUS_LOGIN = "nexuslogin"
         SONARSCANNER = "sonarscanner"
         SONARSERVER = "sonarserver"
+        cluster = "vproappstaging"
+        service = "vprofileapptask-service-uouhjjqc"
     }
     stages {
         stage('Build') {
@@ -86,6 +88,13 @@ pipeline {
                       type: 'war']
                    ]
                 )
+            }
+        }
+        stage ("Deploy to Staging ECS") {
+            steps{
+                withAWS(credentials: 'awscreds', region: 'us-east1') {
+                    sh 'aws ecs update-service --cluster ${cluster} --service ${service} --force-new-deployment' 
+                }
             }
         }
     }
