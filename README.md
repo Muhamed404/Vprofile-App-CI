@@ -1,123 +1,117 @@
+# Vprofile App: CI/CD Pipeline
 
-# Vprofile App: Continuous Integration (CI) Pipeline
-
-This README outlines the Continuous Integration (CI) pipeline for the **Vprofile application**, based on the provided Jenkinsfile. The pipeline automates the process from code commit to artifact readiness and notification, ensuring code quality and build integrity.
+This README documents the **Continuous Integration (CI)** and **Continuous Deployment (CD)** pipeline for the **Vprofile application**.  
+The pipeline is implemented in **Jenkins** and automates the process from code commit ➡️ artifact validation ➡️ containerization ➡️ staging deployment ➡️ production deployment on ECS.
 
 ---
 
-## 🚀 CI Pipeline Flow Overview
+##  Overview
 
-The CI pipeline for the Vprofile App is designed to:
-
-- Provide rapid feedback on code changes  
-- Enforce coding standards  
-- Perform comprehensive quality and security checks  
-- Manage build artifacts  
-- Notify developers in real-time  
-
-The process is triggered by code pushes and ends with a validated artifact stored in Nexus, followed by a Slack notification.
-
+**Goals of this pipeline:**
+- Automate build and test of the Vprofile Java application  
+- Enforce coding standards and perform static analysis  
+- Manage build artifacts in Nexus  
+- Build and push Docker images to ECR  
+- Deploy automatically to ECS **staging** and then **production**  
+- Notify developers on every stage  
 
 ---
 
 ## 📊 Visual Flow Diagram
 
-![CI Pipeline Diagram](ci-vprofile-diagram.png) 
+![CI Pipeline Diagram](ci/cd-vprofile-diagram.png) 
+---
+
+## Tools and Services Used
+
+| Purpose                | Tool/Service             |
+|------------------------|--------------------------|
+| CI/CD Orchestration    | Jenkins                  |
+| Version Control        | Git                      |
+| Build Automation       | Maven                    |
+| Code Style Analysis    | Checkstyle               |
+| Static Code Analysis   | SonarQube                |
+| Artifact Repository    | Nexus Repository Manager |
+| Containerization       | Docker                   |
+| Image Registry         | AWS ECR                  |
+| Orchestration          | AWS ECS                  |
+| Notifications          | Slack                    |
 
 ---
 
-## 🛠️ Pipeline Configuration and Stages
+## CI Pipeline Stages
 
-### Global Tools and Environment Variables
+### Build
+```bash
+mvn -s settings.xml -DskipTests install
+```
 
-| Tool / Variable | Value / Example                |
-|-----------------|--------------------------------|
-| **JDK**         | JDK17                          |
-| **Maven**       | MAVEN3.9                       |
-| **SonarScanner**| sonarscanner                   |
-| **SonarQube**   | sonarserver                    |
-| **NEXUSIP**     | `54.152.99.51`                 |
-| **NEXUSPORT**   | `8081`                         |
-| **SNAP_REPO**   | `vprofile-snapshot`            |
-| **RELEASE_REPO**| `vprofile-release`             |
-| **CENTRAL_REPO**| `vprofile-maven-central`       |
-| **NEXUS_GRP_REPO** | `vprofile-maven-group`      |
-| **NEXUS_USER**  | `admin`                        |
-| **NEXUS_PASS**  | `admin123`                     |
-| **NEXUS_LOGIN** | `nexuslogin-ID` (Jenkins ID)   |
+### Test
+```bash
+mvn -s settings.xml test
+```
 
----
+### Checkstyle
+```bash
+mvn -s settings.xml checkstyle:checkstyle
+```
 
-## 🔄 Key Stages and Components
+### SonarQube Analysis
+```bash
+sonar-scanner   -Dsonar.projectKey=vprofile   -Dsonar.sources=src/   -Dsonar.java.binaries=target/
+```
 
-### ✅ Build
-- **Description**: Compiles the Vprofile application and packages it into a `.war` file.  
-- **Command**: `mvn -s settings.xml -DskipTests install`  
-- **Post-Action**: Archives the `**/*.war` artifact in Jenkins.  
-
-### ✅ Test
-- **Description**: Runs unit and integration tests.  
-- **Command**: `mvn -s settings.xml test`  
-- **Reports**: Generated via Surefire plugin.  
-
-### ✅ Checkstyle Analysis
-- **Description**: Enforces Java coding standards using Checkstyle.  
-- **Command**: `mvn -s settings.xml checkstyle:checkstyle`  
-
-### ✅ Sonar Analysis
-- **Description**: Performs static code analysis with SonarQube.  
-- **Tool**: SonarScanner  
-- **Command (sample)**:  
-  ```bash
-  sonar-scanner \
-    -Dsonar.projectKey=vprofile \
-    -Dsonar.projectName=Vprofile \
-    -Dsonar.sources=src/ \
-    -Dsonar.java.binaries=target/ \
-    -Dsonar.junit.reportsPath=target/surefire-reports/ \
-    -Dsonar.jacoco.reportsPath=target/jacoco.exec \
-    -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml
-  ```  
-
-### ✅ Quality Gate
-- **Description**: Waits for SonarQube’s quality-gate status.  
-- **Timeout**: 10 minutes; the build aborts if the gate fails.  
-
-### ✅ Upload Artifact
-- **Description**: Uploads the `.war` file to Nexus.  
-- **Tool**: Nexus Artifact Uploader plugin  
-- **Repository**: `vprofile-release`  
-- **Artifact details**:  
-  ```groovy
-  artifactId: 'vproapp'
-  file: 'target/vprofile-v2.war'
-  type: 'war'
-  ```
+### Upload Artifact to Nexus
+```groovy
+artifactId: 'vproapp'
+file: 'target/vprofile-v2.war'
+type: 'war'
+repository: 'vprofile-release'
+```
 
 ---
 
-## 🧩 Post-Pipeline Actions
+## CD Pipeline Stages
 
-### 🟢 Slack Notification (always)
-- **Channel**: `#all-devops`  
-- **Message**: Build status, job name, build number, Jenkins URL.  
-- **Color map**: `good` for success, `danger` for failure.  
+### Build App Image
+```groovy
+dockerImage = docker.build(appRegisrty + ":$BUILD_NUMBER", "-f ./Docker-files/app/Dockerfile .")
+```
 
----
+### Upload App Image
+```groovy
+docker.withRegistry(vprofileRegistry, registryCredentinal) {
+    dockerImage.push("$BUILD_NUMBER")
+    dockerImage.push("latest")
+}
+```
 
-## ⚙️ Technologies Used
-
-| Purpose                | Tool                         |
-|------------------------|------------------------------|
-| Version Control        | Git                          |
-| CI Server              | Jenkins                      |
-| Build Automation       | Apache Maven                 |
-| Java Runtime           | JDK 17                       |
-| Code Style Analysis    | Checkstyle                   |
-| Static Code Analysis   | SonarQube                    |
-| Artifact Repository    | Nexus Repository Manager     |
-| Notifications          | Slack                        |
+### Deploy to Staging ECS
+```bash
+aws ecs update-service --cluster ${cluster} --service ${service} --force-new-deployment
+```
 
 ---
 
-Every change to the Vprofile codebase passes through this automated pipeline, ensuring that only tested, high-quality artifacts progress to later deployment stages.
+### Deploy to Production ECS
+Once staging tests succeed, the same image is deployed to production:
+```bash
+aws ecs update-service --cluster ${prodCluster} --service ${prodService} --force-new-deployment
+```
+---
+
+## 🧩 Notifications
+
+- Slack messages are sent after each stage:
+  - Build status
+  - Deployment status (staging & production)
+  - Jenkins job link
+
+---
+
+## Security
+
+- All credentials (Docker, AWS) are stored in **Jenkins Credentials Manager**.
+- They are injected at runtime as environment variables.
+- IAM roles use least-privilege access.
+
