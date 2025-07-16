@@ -19,7 +19,7 @@ The pipeline is implemented in **Jenkins** and automates the process from code c
 
 ## 📊 Visual Flow Diagram
 
-![CI Pipeline Diagram](ci/cd-vprofile-diagram.png) 
+![CI Pipeline Diagram](ci-cd-vprofile-diagram.png) 
 ---
 
 ## Tools and Services Used
